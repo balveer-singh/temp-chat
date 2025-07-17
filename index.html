@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Temp Chat (Firebase Only Listen)</title>
+  <script src="https://www.gstatic.com/firebasejs/10.3.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.3.0/firebase-database-compat.js"></script>
+  <style>
+    body { font-family: Arial; background: #f5f5f5; padding: 30px; }
+    #chat { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    #messages { min-height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 6px; overflow-y: auto; margin-bottom: 10px; }
+    #messages div { margin-bottom: 10px; padding: 6px 10px; background: #e4e4e4; border-radius: 6px; }
+    input, button { padding: 10px; font-size: 16px; width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>Private Temp Chat</h2>
+    <div id="messages"></div>
+    <input type="text" id="msg" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    // 🔁 Replace this with your actual Firebase config:
+    const firebaseConfig = {
+    apiKey: "AIzaSyA4MkLHRt7fhYB5fP0zGIO1g3Udh54SkX8",
+    authDomain: "chat-app-4b494.firebaseapp.com",
+    databaseURL: "https://chat-app-4b494-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "chat-app-4b494",
+    storageBucket: "chat-app-4b494.firebasestorage.app",
+    messagingSenderId: "110989437124",
+    appId: "1:110989437124:web:4f8c993450e901c48a4191",
+    measurementId: "G-05D7BXDWTF"
+  };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const chatRef = db.ref("tempChat");
+
+    // Send message (overwrites previous one)
+    function sendMessage() {
+      const msg = document.getElementById("msg").value;
+      if (msg.trim() === '') return;
+      chatRef.set({ text: msg });
+      document.getElementById("msg").value = '';
+    }
+
+    // Listen for latest message
+    chatRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML = ''; // Clear previous
+      if (data && data.text) {
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = data.text;
+        messagesDiv.appendChild(msgDiv);
+      }
+    });
+  </script>
+</body>
+</html>
