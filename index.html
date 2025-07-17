@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Temp Chat (Firebase Only Listen)</title>
+  <title>Chat - Auto Delete on Refresh</title>
   <script src="https://www.gstatic.com/firebasejs/10.3.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.0/firebase-database-compat.js"></script>
   <style>
-    body { font-family: Arial; background: #f5f5f5; padding: 30px; }
-    #chat { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-    #messages { min-height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 6px; overflow-y: auto; margin-bottom: 10px; }
-    #messages div { margin-bottom: 10px; padding: 6px 10px; background: #e4e4e4; border-radius: 6px; }
+    body { font-family: sans-serif; background: #f2f2f2; padding: 30px; }
+    #chat { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
+    #messages { border: 1px solid #ccc; height: 200px; overflow-y: auto; margin-bottom: 10px; padding: 10px; }
     input, button { padding: 10px; font-size: 16px; width: 100%; margin-top: 10px; }
+    #messages div { margin-bottom: 8px; background: #eee; padding: 8px; border-radius: 6px; }
   </style>
 </head>
 <body>
   <div id="chat">
-    <h2>Private Temp Chat</h2>
+    <h2>Private Chat</h2>
     <div id="messages"></div>
-    <input type="text" id="msg" placeholder="Type your message..." />
+    <input type="text" id="msg" placeholder="Type a message..." />
     <button onclick="sendMessage()">Send</button>
   </div>
 
   <script>
-    // 🔁 Replace this with your actual Firebase config:
+    // 🔁 Replace with your Firebase config
     const firebaseConfig = {
     apiKey: "AIzaSyA4MkLHRt7fhYB5fP0zGIO1g3Udh54SkX8",
     authDomain: "chat-app-4b494.firebaseapp.com",
@@ -33,29 +33,34 @@
     measurementId: "G-05D7BXDWTF"
   };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const chatRef = db.ref("tempChat");
 
-    // Send message (overwrites previous one)
+    // Unique session key for each user
+    const sessionID = "session_" + Math.random().toString(36).substr(2, 9);
+    const userRef = db.ref("chats/" + sessionID);
+
+    // Send message
     function sendMessage() {
-      const msg = document.getElementById("msg").value;
-      if (msg.trim() === '') return;
-      chatRef.set({ text: msg });
-      document.getElementById("msg").value = '';
+      const msg = document.getElementById("msg").value.trim();
+      if (!msg) return;
+      userRef.push({ text: msg });
+      document.getElementById("msg").value = "";
     }
 
-    // Listen for latest message
-    chatRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = ''; // Clear previous
-      if (data && data.text) {
-        const msgDiv = document.createElement("div");
-        msgDiv.textContent = data.text;
-        messagesDiv.appendChild(msgDiv);
-      }
+    // Show all messages from all users
+    db.ref("chats").on("child_added", function (snapshot) {
+      snapshot.ref.on("child_added", function (msgSnap) {
+        const msg = msgSnap.val();
+        const div = document.createElement("div");
+        div.textContent = msg.text;
+        document.getElementById("messages").appendChild(div);
+      });
+    });
+
+    // 💣 Delete this user's messages when the page unloads (refresh or close)
+    window.addEventListener("beforeunload", function () {
+      userRef.remove();
     });
   </script>
 </body>
